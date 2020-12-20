@@ -15,6 +15,5 @@ Unity3D Sprite Sorter is a small script that sorts active SpriteRenderers in a s
 **DemoScene is included in the current release which can be downloaded @ Releases:** [DemoScene @ Release 0.9.1](https://github.com/IamCrypt0n/Unity3D-Sprite-sorter/releases/tag/0.9.1)
 
 ## Still to be done
-  - Sort SpriteRenderer of GameObject only when it has moved 
   - Proper sourcecode documentation
   - Youtube Demo
