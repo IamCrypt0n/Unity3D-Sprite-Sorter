@@ -10,12 +10,6 @@ public class SpriteSorter : MonoBehaviour{
     [SerializeField] List<Tuple<SpriteRenderer, float>> dynamicRenderers = new List<Tuple<SpriteRenderer, float>>();
     
     /// <summary>
-    /// List of sprites to be sorted at initialisation (most commonly static objects)
-    /// </summary>
-    [Tooltip("SpriteRenderers to be sorted once when game starts. Use this list for static scene props")]
-    [SerializeField] List<SpriteRenderer> initialRenderers = new List<SpriteRenderer>();
-    
-    /// <summary>
     /// Accuracy of sorting
     /// </summary>
     
@@ -33,8 +27,8 @@ public class SpriteSorter : MonoBehaviour{
     /// <summary>
     /// Sort static SceneObjects (props) at the start of the game/scene
     /// </summary>
-    void Start(){
-        sortInitialSprites();
+    void Awake() {
+        sortStaticSceneObject();
     }
 
     /// <summary>
@@ -79,21 +73,6 @@ public class SpriteSorter : MonoBehaviour{
             renderer.sortingOrder = (int)((rendererParent.transform.position.y + sortOffset) * -(Math.Pow(10, accuracy)));
         }
     }
-
-    /// <summary>
-    /// Set sorting orders of sceneObjects (props) preadded to the Sprite Sorter
-    /// </summary>
-    private void sortInitialSprites(){
-        foreach (SpriteRenderer renderer in initialRenderers){
-            if (renderer){
-                GameObject rendererParent = renderer.gameObject;
-                float sortOffset = getSortYOffset(rendererParent);
-                renderer.sortingOrder = (int)((rendererParent.transform.position.y + sortOffset) * -(Math.Pow(10,accuracy)));
-            }
-        }
-    }
-
-
     
     /// <summary>
     /// Sorts SpriteRenderers of all moving/dynamic GameObjects. This will be called every frame
@@ -110,6 +89,34 @@ public class SpriteSorter : MonoBehaviour{
         }
     }
     
+    /// <summary>
+    /// Checks existence of a sorting point
+    /// </summary>
+    /// <param name="gObject">SpriteRenderers GameObject which must have a sorting point as a child GameObject</param>
+    /// <returns></returns>
+    bool checkSortPointExists(GameObject gObject) {
+        foreach (Transform t in gObject.transform) {
+            if (t.tag.Equals(sortPointTag)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /// <summary>
+    /// Search for props with an existing sort point and sort their SpriteRennderer
+    /// </summary>
+    void sortStaticSceneObject() {
+        GameObject[] props = UnityEngine.Object.FindObjectsOfType<GameObject>();
+
+        foreach (GameObject prop in props) {
+            if (prop.GetComponent<SpriteRenderer>() && checkSortPointExists(prop) ) {
+                SpriteRenderer renderer = prop.GetComponent<SpriteRenderer>();
+                float sortOffset = getSortYOffset(prop);
+                renderer.sortingOrder = (int)((prop.transform.position.y + sortOffset) * -(Math.Pow(10, accuracy)));
+            }
+        }
+    }
 
     void Update(){
         sortDynamicSprites();
