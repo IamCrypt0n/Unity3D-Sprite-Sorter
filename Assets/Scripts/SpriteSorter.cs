@@ -98,7 +98,22 @@ public class SpriteSorter : MonoBehaviour{
         if (renderer) {
             GameObject rendererParent = renderer.gameObject;
             float sortOffset = getSortYOffset(rendererParent);
-            renderer.sortingOrder = (int)((rendererParent.transform.position.y + sortOffset) * -(Math.Pow(10, accuracy)));
+            if (float.IsNaN(sortOffset)) {
+                Sprite sprite = renderer.sprite;
+                foreach (SpriteAndOffset so in OrderListBySprite) {
+                    if (so.sprite == sprite) {
+                        sortOffset = so.yOffset;
+                    }
+                }
+            }
+            //yOffset will be NaN if the sprite was not found in the OrderListBySprite list
+            if (!float.IsNaN(sortOffset)) {
+                renderer.sortingOrder = (int)((rendererParent.transform.position.y + sortOffset) * -(Math.Pow(10, accuracy)));
+            }
+            else {
+                Debug.LogError(string.Format("Was not able to find a sorting offset for given GameObject: {0}\n Add a sorting point to this GameObject or add it to the OrderBySprite list!", rendererParent.name));
+            }
+            
         }
     }
 
