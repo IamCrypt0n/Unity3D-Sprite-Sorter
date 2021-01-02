@@ -3,7 +3,18 @@ using System.Collections.Generic;
 using UnityEngine;
 
 public class SpriteSorter : MonoBehaviour{
-    
+    [Serializable]
+    struct SpriteAndOffset {
+        public Sprite sprite;
+        public float yOffset;
+    }
+
+    /// <summary>
+    /// Sprites and their fixed sort point offsets. Offset is added to the GameObjects sprite position
+    /// </summary>
+    [Tooltip("Sprite and the offset for every GameObjects sortpoint with this sprite")]
+    [SerializeField] private List<SpriteAndOffset> OrderListBySprite = new List<SpriteAndOffset>();
+
     /// <summary>
     /// List of sprites to be sorted each frame (most commonly moving objects)
     /// </summary>
@@ -39,16 +50,33 @@ public class SpriteSorter : MonoBehaviour{
         if (renderer){
             GameObject rendererParent = renderer.gameObject;
             float yOffset = getSortYOffset(rendererParent);
+            //If yOffset is Not a Number (NaN), offset will be searched in the OrderListBySprite list
+            if (float.IsNaN(yOffset)) {
+                Sprite sprite = renderer.sprite;
+                foreach (SpriteAndOffset so in OrderListBySprite) {
+                    if (so.sprite == sprite) {
+                        yOffset = so.yOffset;
+                    }
+                }
+            }
+            //yOffset will be NaN if the sprite was not found in the OrderListBySprite list
+            if (!float.IsNaN(yOffset)) {
+                dynamicRenderers.Add(new Tuple<SpriteRenderer, float>(renderer, yOffset));
+            }
+            else {
+                Debug.LogError(string.Format("Was not able to find a sorting offset for given GameObject: {0}\n Add a sorting point to this GameObject or add it to the OrderBySprite list!", rendererParent.name));
+            }
             
-            dynamicRenderers.Add(new Tuple<SpriteRenderer, float>(renderer, yOffset));
+
         }
     }
+
 
     /// <summary>
     /// Get y-offset of sorting point and actual GameObject. 
     /// </summary>
     /// <param name="parent"></param>
-    /// <returns></returns>
+    /// <returns>Offset to sorting point will be returned if it exists. If not NaN (Not a Number) will be returned</returns>
     private float getSortYOffset(GameObject parent){
         foreach (Transform t  in parent.transform){
             if(t.tag.Equals(sortPointTag)){
@@ -73,22 +101,23 @@ public class SpriteSorter : MonoBehaviour{
             renderer.sortingOrder = (int)((rendererParent.transform.position.y + sortOffset) * -(Math.Pow(10, accuracy)));
         }
     }
-    
+
     /// <summary>
     /// Sorts SpriteRenderers of all moving/dynamic GameObjects. This will be called every frame
     /// </summary>
-    void sortDynamicSprites(){
-        for (int index = 0; index < dynamicRenderers.Count; index++){
-            if (dynamicRenderers[index].Item1){ //Item 1 = SpriteRenderer, Item2 = sortPoint offset
+    void sortDynamicSprites() {
+        for (int index = 0; index < dynamicRenderers.Count; index++) {
+
+            if (dynamicRenderers[index].Item1) { //Item 1 = SpriteRenderer, Item2 = sortPoint offset
                 GameObject rendererParent = dynamicRenderers[index].Item1.gameObject;   //Get sortPoint offset from list tuple
                 dynamicRenderers[index].Item1.sortingOrder = (int)((rendererParent.transform.position.y + dynamicRenderers[index].Item2) * -(Math.Pow(10, accuracy))); //Calculate new sortOrder
             }
             else {
                 dynamicRenderers.RemoveAt(index);  //Remove renderer from sorting list
+
             }
         }
-    }
-    
+    }   
     /// <summary>
     /// Checks existence of a sorting point
     /// </summary>
@@ -110,10 +139,28 @@ public class SpriteSorter : MonoBehaviour{
         GameObject[] props = UnityEngine.Object.FindObjectsOfType<GameObject>();
 
         foreach (GameObject prop in props) {
-            if (prop.GetComponent<SpriteRenderer>() && checkSortPointExists(prop) ) {
-                SpriteRenderer renderer = prop.GetComponent<SpriteRenderer>();
-                float sortOffset = getSortYOffset(prop);
-                renderer.sortingOrder = (int)((prop.transform.position.y + sortOffset) * -(Math.Pow(10, accuracy)));
+            SpriteRenderer renderer = prop.GetComponent<SpriteRenderer>();
+            if (renderer) {
+                float sortOffset = float.NaN;
+                
+                if (checkSortPointExists(prop)) {
+                    sortOffset = getSortYOffset(prop);
+                }else {
+                    Sprite sprite = renderer.sprite;
+                    foreach (SpriteAndOffset so in OrderListBySprite) {
+                        if (so.sprite == sprite) {
+                            sortOffset = so.yOffset;
+                        }
+                    }
+                }
+
+                if (!float.IsNaN(sortOffset)) {
+                    renderer.sortingOrder = (int)((prop.transform.position.y + sortOffset) * -(Math.Pow(10, accuracy)));
+                }else {
+                    Debug.LogError(string.Format("Was not able to find a sorting offset for given GameObject: {0}\n Add a sorting point to this GameObject or add it to the OrderBySprite list!", prop.name));
+                }
+                
+
             }
         }
     }
