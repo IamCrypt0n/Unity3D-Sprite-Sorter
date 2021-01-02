@@ -8,6 +8,7 @@ Unity3D Sprite Sorter is a small script that sorts active SpriteRenderers in a s
 ## Usage
 
   - Add a GameObject with the sortPointTag (can be customized) as a child of the GameObject to be sorted
+  - Add a sprite and a fixed y-Offset to the "OrderListBySprite" list. Props and dynamic/moving GameObjects whichs sprite is added to this list will be sorted according     to the associated y-Offset in the list.
   - Add dynamic/moving sceneObjects to sorter by calling registerRenderer() at runtime
   - Sorting SpriteRenderer of static GameObject which has been spawned at runtime is done by calling sortOnce()
  
